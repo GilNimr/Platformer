@@ -40,7 +40,7 @@ namespace Platformer
         
         
 
-        Border border;
+       
 
         // Camera
         private Camera2D camera;
@@ -129,6 +129,7 @@ namespace Platformer
                 p2.Body.BodyType = BodyType.Dynamic;
                 p2.CollisionCategories = Category.Cat3;
                 p2.CollidesWith = Category.All & ~Category.Cat3;
+                p2.Body.Friction = 0.8f;
 
                var joint=  JointFactory.CreateRevoluteJoint(world, p2.Body, new Body(world), new Vector2(30.0f*i -12, 7.0f), new Vector2(30.0f*i, 7.0f));
 
@@ -165,6 +166,13 @@ namespace Platformer
             p5.CollisionCategories = Category.Cat3;
             p5.CollidesWith = Category.All & ~Category.Cat3;
 
+            
+
+            p5 = FixtureFactory.AttachRectangle(10.0f, 2.0f, 5.0f, new Vector2(-22.0f, 45.0f), new Body(world));
+            p5.Body.BodyType = BodyType.Kinematic;
+            p5.CollisionCategories = Category.Cat3;
+            p5.CollidesWith = Category.All & ~Category.Cat3;
+
 
 
 
@@ -183,15 +191,15 @@ namespace Platformer
                     FixtureFactory.AttachEdge(terrain[i], terrain[i + 1], _ground);
                 }
 
-                _ground.Friction = 0.6f;
+                _ground.Friction = 1.2f;
                 _ground.CollisionCategories = Category.Cat3;
 
                 // terrain 2
                
                     Vertices terrain2 = new Vertices();
                 terrain2.Add(new Vector2(-20f, 0f));
-                terrain2.Add(new Vector2(-45f, 0f));
-                terrain2.Add(new Vector2(-45f, 35f));
+                terrain2.Add(new Vector2(-35f, 0f));
+                terrain2.Add(new Vector2(-35f, 45f));
                     terrain2.Add(new Vector2(-100f, 35f));
                
                     for (int i = 0; i < terrain2.Count - 1; ++i)
@@ -200,10 +208,41 @@ namespace Platformer
                     }
 
                 Vertices ceiling = new Vertices();
-                ceiling.Add(new Vector2(-1000f, 40f));
-                ceiling.Add(new Vector2(1000f, 40f));
+                ceiling.Add(new Vector2(-1000f, 50f));
+                ceiling.Add(new Vector2(75f, 50f));
+                ceiling.Add(new Vector2(95f, 50f));
+                ceiling.Add(new Vector2(1000f, 50f));
                 FixtureFactory.AttachEdge(ceiling[0], ceiling[1], _ground);
+                FixtureFactory.AttachEdge(ceiling[2], ceiling[3], _ground);
             }
+
+            Fixture block;
+
+            block = FixtureFactory.AttachRectangle(8.0f, 8.0f, 4.0f, new Vector2(70.0f, 40.0f), new Body(world));
+            block.Body.BodyType = BodyType.Dynamic;
+            block.Body.Restitution = 0.4f;
+            block.CollisionCategories = Category.Cat2;
+
+            block = FixtureFactory.AttachRectangle(8.0f, 8.0f, 4.0f, new Vector2(70.0f, 55.0f), new Body(world));
+            block.Body.BodyType = BodyType.Dynamic;
+            block.Body.Restitution = 0.4f;
+            block.CollisionCategories = Category.Cat2;
+
+            block = FixtureFactory.AttachRectangle(8.0f, 8.0f, 4.0f, new Vector2(65.0f, 55.0f), new Body(world));
+            block.Body.BodyType = BodyType.Dynamic;
+            block.Body.Restitution = 0.4f;
+            block.CollisionCategories = Category.Cat2;
+
+            block = FixtureFactory.AttachRectangle(8.0f, 8.0f, 4.0f, new Vector2(100.0f, 55.0f), new Body(world));
+            block.Body.BodyType = BodyType.Dynamic;
+            block.Body.Restitution = 0.4f;
+            block.CollisionCategories = Category.Cat2;
+
+            block = FixtureFactory.AttachRectangle(8.0f, 8.0f, 4.0f, new Vector2(105.0f, 55.0f), new Body(world));
+            block.Body.BodyType = BodyType.Dynamic;
+            block.Body.Restitution = 0.4f;
+            block.CollisionCategories = Category.Cat2;
+
 #endif
 
             Vector2 gameWorld =
@@ -255,13 +294,13 @@ namespace Platformer
 
             if (input.KeyboardHandler.IsKeyDown(Keys.Left))
             {
-                player.Body.ApplyLinearImpulse(new Vector2(-200, 0));
+                player.Body.ApplyLinearImpulse(new Vector2(-100, 0));
                // circles[0].Body.ApplyLinearImpulse(new Vector2(-200, 0));
                // axis.MotorSpeed = -MathHelper.TwoPi * 300;
             }
             else if (input.KeyboardHandler.IsKeyDown(Keys.Right))
             {
-                player.Body.ApplyLinearImpulse(new Vector2(200, 0));
+                player.Body.ApplyLinearImpulse(new Vector2(100, 0));
                // circles[0].Body.ApplyLinearImpulse(new Vector2(200, 0));
                // axis.MotorSpeed = -MathHelper.TwoPi * 3;
 
@@ -272,7 +311,7 @@ namespace Platformer
             {
                 if (jumptime >= 0.1f)
                 {
-                    player.Body.ApplyLinearImpulse(new Vector2(0, 2000f));
+                    player.Body.ApplyLinearImpulse(new Vector2(0, 2500f));
                     // circles[0].Body.ApplyLinearImpulse(new Vector2(0,2000f));
                     jumptime = 0;
                 }
