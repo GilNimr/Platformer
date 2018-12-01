@@ -41,11 +41,9 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Border.cs" />
     <Compile Include="Camera2D.cs" />
     <Compile Include="DrawablePhysicsObject.cs" />
     <Compile Include="Game1.cs" />
-    <Compile Include="Player.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

@@ -5,12 +5,11 @@ using Microsoft.Xna.Framework.Input;
 using FarseerPhysics.Dynamics;
 using FarseerPhysics.Factories;
 using FarseerPhysics.DebugView;
-using System.Collections.Generic;
 using System;
 using XELibrary;
 using FarseerPhysics;
 using FarseerPhysics.Common;
-using FarseerPhysics.Dynamics.Joints;
+
 
 namespace Platformer
 {
@@ -21,6 +20,7 @@ namespace Platformer
     {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
+        
 
         // Physics
         private World world;
@@ -28,26 +28,40 @@ namespace Platformer
         private const float G = 9.81f;
         private Vector2 gravity = new Vector2(0.0f, -G);
 
+        SpriteFont font;
 
+        //the main player.
         Fixture player_fixture;
         DrawablePhysicsObject player;
 
-        //platforms
-        DrawablePhysicsObject Platform2;
+        //finish button fixture for end of level.
+        Fixture finish_button;
 
+        //for drawing platforms
+        private DrawablePhysicsObject Platform2;
+        private DrawablePhysicsObject Platform3;
+        private DrawablePhysicsObject Platform4;
+        private DrawablePhysicsObject Platform5;
+        private DrawablePhysicsObject Platform6;
+        
+
+        //for drawing blocks
+        private DrawablePhysicsObject Draw_block1;
+        private DrawablePhysicsObject Draw_block5;
+        private DrawablePhysicsObject Draw_block2;
+        private DrawablePhysicsObject Draw_block3;
+        private DrawablePhysicsObject Draw_block4;
+
+        private DrawablePhysicsObject Draw_finish_button;
+
+        private Body _ground;
 
         private bool paused = false;
 
-        private List<Fixture> circles = new List<Fixture>();
-        private List<Fixture> platforms = new List<Fixture>();
-
-        
-        
-
-       
-
         // Camera
         private Camera2D camera;
+
+        //textures
         private Texture2D texture_player;
         private Texture2D paddle_texture;
         private Texture2D bg_texture;
@@ -57,27 +71,16 @@ namespace Platformer
 
         // Debug view
         DebugViewXNA debugView;
-        private double jumptime;
-        private DrawablePhysicsObject Platform6;
-        private Body _ground;
-     
 
-        private RevoluteJoint axis;
-        private DrawablePhysicsObject Draw_block;
-        private DrawablePhysicsObject Draw_block1;
-        private DrawablePhysicsObject Draw_block5;
-        private Vector2 gameWorld;
-        private DrawablePhysicsObject Platform3;
-        private DrawablePhysicsObject Platform4;
-        private DrawablePhysicsObject Platform5;
-        private DrawablePhysicsObject Draw_block2;
-        private DrawablePhysicsObject Draw_block3;
-        private DrawablePhysicsObject Draw_block4;
+        //helps with charcters jump.
+        private double jumptime;
+        private bool level_is_finished;
 
         public Game1()
         {
             graphics = new GraphicsDeviceManager(this);
 
+            
             graphics.SynchronizeWithVerticalRetrace = false;
             graphics.PreferMultiSampling = true;
             IsFixedTimeStep = true;
@@ -120,59 +123,54 @@ namespace Platformer
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
-           camera = new Camera2D(GraphicsDevice);
+            camera = new Camera2D(GraphicsDevice);
+
+            //adjusting the camera to match the drawing.
             camera.MaxZoom = 100;
             camera.MinZoom = -100;
             camera.ZoomOut(0.2f);
-            
+
+            //loading textures.
            texture_player = Content.Load<Texture2D>("crate");
            paddle_texture = Content.Load<Texture2D>("paddle");
            bg_texture = Content.Load<Texture2D>("video-game-background-blue_451fb1bpx__F0000");
+
+            //loading fonts
+            font = Content.Load<SpriteFont>("Font");
 #if true
 
-
+            //creating the player
             player_fixture = FixtureFactory.AttachRectangle(4.0f , 4.0f, 10.0f, new Vector2(), new Body(world));
             player_fixture.Body.BodyType = BodyType.Dynamic;
             player_fixture.CollisionCategories = Category.Cat2;
-            player_fixture.Body.Position = new Vector2(0f, 3.0f);
+            player_fixture.Body.Position = new Vector2(07, 3.0f);
 
             player = new DrawablePhysicsObject(player_fixture.Body, texture_player, new Vector2(40.0f, 40.0f));
             
-            //platforms.Add(player);
-            
-            /*Fixture c1;
-            
-            c1 = FixtureFactory.AttachCircle(2.0f, 10.0f, new Body(world, new Vector2(-8.0f, 3.0f)));
-            c1.Body.BodyType = BodyType.Dynamic;
-            c1.CollisionCategories = Category.Cat2;
-            c1.Restitution = 0.4f;
-            circles.Add(c1);*/
-           
-
-           
+            //creating platform 2
             Fixture p2;
             
-                p2 = FixtureFactory.AttachRectangle(24.0f, 2.0f, 20.0f, new Vector2(), new Body(world));
-                p2.Body.Position = new Vector2(30.0f, 7.0f);
-                p2.Body.BodyType = BodyType.Dynamic;
-                p2.CollisionCategories = Category.Cat3;
-                p2.CollidesWith = Category.All & ~Category.Cat3;
-                p2.Body.Friction = 0.8f;
-                Platform2 = new DrawablePhysicsObject(p2.Body, paddle_texture, new Vector2(240.0f, 20.0f));
+             p2 = FixtureFactory.AttachRectangle(24.0f, 2.0f, 20.0f, new Vector2(), new Body(world));
+             p2.Body.Position = new Vector2(30.0f, 7.0f);
+             p2.Body.BodyType = BodyType.Dynamic;
+             p2.CollisionCategories = Category.Cat3;
+             p2.CollidesWith = Category.All & ~Category.Cat3; //meaning this platform can collide with anything
+                                                                //ecxept other category 3 fixtures.
+             p2.Body.Friction = 0.8f;
+             Platform2 = new DrawablePhysicsObject(p2.Body, paddle_texture, new Vector2(240.0f, 20.0f));
 
+            //this is the joint that connects the platform to the world.
             var joint=  JointFactory.CreateRevoluteJoint(world, p2.Body, new Body(world), new Vector2(30.0f -12, 7.0f), new Vector2(30.0f, 7.0f),true);
 
-                // rotate 1/4 of a circle per second
-                joint.MotorSpeed = MathHelper.PiOver2;
-                // have little torque (power) so it can push away a few blocks
+            // rotate 1/4 of a circle per second
+            joint.MotorSpeed = MathHelper.PiOver2;
+            joint.MotorEnabled = true;
+            joint.MaxMotorTorque = 100000; //motor speed.
 
-                joint.MotorEnabled = true;
-                joint.MaxMotorTorque = 100000;
 
-                platforms.Add(p2);
-                
-            
 
+
+            //creating platform 3
             Fixture p3;
 
             p3 = FixtureFactory.AttachRectangle(24.0f, 2.0f, 5.0f, new Vector2(), new Body(world));
@@ -183,8 +181,8 @@ namespace Platformer
 
             Platform3 = new DrawablePhysicsObject(p3.Body, paddle_texture, new Vector2(240.0f, 20.0f));
 
-            platforms.Add(p3);
 
+            //creating platform 4
             Fixture p4;
 
             p4 = FixtureFactory.AttachRectangle(24.0f, 2.0f, 5.0f, new Vector2(), new Body(world));
@@ -195,6 +193,8 @@ namespace Platformer
 
             Platform4 = new DrawablePhysicsObject(p4.Body, paddle_texture, new Vector2(240.0f, 20.0f));
 
+
+            //creating platform 5
             Fixture p5;
 
             p5 = FixtureFactory.AttachRectangle(24.0f, 2.0f, 5.0f, new Vector2(), new Body(world));
@@ -206,7 +206,7 @@ namespace Platformer
             Platform5 = new DrawablePhysicsObject(p5.Body, paddle_texture, new Vector2(240.0f, 20.0f));
 
 
-
+            //creating platform 6
             Fixture p6;
 
             p6 = FixtureFactory.AttachRectangle(10.0f, 2.0f, 5.0f, new Vector2(), new Body(world));
@@ -219,9 +219,10 @@ namespace Platformer
 
 
 
-            // terrain
+            // creating the ground, can only bein seen in debugview
             _ground = BodyFactory.CreateBody(world);
             {
+                //terrain
                 Vertices terrain = new Vertices();
 
                 terrain.Add(new Vector2(150f, 35f));
@@ -237,18 +238,19 @@ namespace Platformer
                 _ground.Friction = 1.2f;
                 _ground.CollisionCategories = Category.Cat3;
 
+
                 // terrain 2
-               
-                    Vertices terrain2 = new Vertices();
+                Vertices terrain2 = new Vertices();
                 terrain2.Add(new Vector2(-20f, 0f));
                 terrain2.Add(new Vector2(-35f, 0f));
                 terrain2.Add(new Vector2(-35f, 45f));
-                    terrain2.Add(new Vector2(-100f, 35f));
-               
-                    for (int i = 0; i < terrain2.Count - 1; ++i)
-                    {
-                        FixtureFactory.AttachEdge(terrain2[i], terrain2[i + 1], _ground);
-                    }
+                terrain2.Add(new Vector2(-100f, 35f));
+                terrain2.Add(new Vector2(-150f, 35f));
+
+                for (int i = 0; i < terrain2.Count - 1; ++i)
+                {
+                FixtureFactory.AttachEdge(terrain2[i], terrain2[i + 1], _ground);
+                }
 
                 Vertices ceiling = new Vertices();
                 ceiling.Add(new Vector2(-1000f, 50f));
@@ -257,8 +259,9 @@ namespace Platformer
                 ceiling.Add(new Vector2(1000f, 50f));
                 FixtureFactory.AttachEdge(ceiling[0], ceiling[1], _ground);
                 FixtureFactory.AttachEdge(ceiling[2], ceiling[3], _ground);
+               
             }
-
+            //creating block 1
             Fixture block1;
 
             block1 = FixtureFactory.AttachRectangle(8.0f, 8.0f, 4.0f, new Vector2(), new Body(world));
@@ -268,6 +271,7 @@ namespace Platformer
             block1.CollisionCategories = Category.Cat2;
             Draw_block1 = new DrawablePhysicsObject(block1.Body, texture_player, new Vector2(80, 80));
 
+            //creating block 2
             Fixture block2;
 
             block2 = FixtureFactory.AttachRectangle(8.0f, 8.0f, 4.0f, new Vector2(), new Body(world));
@@ -277,6 +281,7 @@ namespace Platformer
             block2.CollisionCategories = Category.Cat2;
             Draw_block2 = new DrawablePhysicsObject(block2.Body, texture_player, new Vector2(80, 80));
 
+            //creating block 3
             Fixture block3;
 
             block3 = FixtureFactory.AttachRectangle(8.0f, 8.0f, 4.0f, new Vector2(), new Body(world));
@@ -286,6 +291,7 @@ namespace Platformer
             block3.CollisionCategories = Category.Cat2;
             Draw_block3 = new DrawablePhysicsObject(block3.Body, texture_player, new Vector2(80, 80));
 
+            //creating block 4
             Fixture block4;
 
             block4 = FixtureFactory.AttachRectangle(8.0f, 8.0f, 4.0f, new Vector2(), new Body(world));
@@ -295,6 +301,7 @@ namespace Platformer
             block4.CollisionCategories = Category.Cat2;
             Draw_block4 = new DrawablePhysicsObject(block4.Body, texture_player, new Vector2(80, 80));
 
+            //creating block 5
             Fixture block5;
 
             block5 = FixtureFactory.AttachRectangle(8.0f, 8.0f, 4.0f, new Vector2(), new Body(world));
@@ -304,18 +311,20 @@ namespace Platformer
             block5.CollisionCategories = Category.Cat2;
             Draw_block5 = new DrawablePhysicsObject(block5.Body, texture_player, new Vector2(80, 80));
 
+            //creating block 5
+            
 
-
+            finish_button = FixtureFactory.AttachRectangle(0.2f, 0.2f, 4.0f, new Vector2(), new Body(world));
+            finish_button.Body.Position = new Vector2(-115.0f, 36.0f);
+            finish_button.Body.BodyType = BodyType.Static;
+            finish_button.Body.Restitution = 0.4f;
+            finish_button.CollisionCategories = Category.Cat2;
+            Draw_finish_button = new DrawablePhysicsObject(block5.Body, texture_player, new Vector2(2, 2));
 #endif
 
-            gameWorld =
-                Camera2D.ConvertScreenToWorld(new Vector2(camera.ScreenWidth,
-                                                        camera.ScreenHeight));
-            
+            //make the camera move after the charcter
             camera.TrackingBody = player_fixture.Body;
-            // camera.Position = ConvertUnits.ToDisplayUnits( camera.Position) ;
             
-
             debugView.LoadContent(GraphicsDevice, Content);
             debugView.DefaultShapeColor = Color.White;
             debugView.SleepingShapeColor = Color.White;
@@ -331,7 +340,7 @@ namespace Platformer
         /// </summary>
         protected override void UnloadContent()
         {
-            // TODO: Unload any non ContentManager content here
+            
         }
 
         /// <summary>
@@ -344,21 +353,22 @@ namespace Platformer
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
-            // TODO: Add your update logic here
             HandleKeyboard(gameTime);
             camera.Update();
-            
-           /* Camera2D.View.M12 *= -1;
-            Camera2D.View.M22 *= -1;
-            Camera2D.View.M32 *= -1;
-            Camera2D.View.M42 *= -1;*/
 
+           
 
             if (!paused)
                 world.Step(Math.Min((float)gameTime.ElapsedGameTime.TotalMilliseconds * dt, (1f / 30f)));
 
             base.Update(gameTime);
         }
+
+        private bool Body_OnCollision(Fixture fixtureA, Fixture fixtureB, FarseerPhysics.Dynamics.Contacts.Contact contact)
+        {
+            throw new NotImplementedException();
+        }
+
         private void HandleKeyboard(GameTime gameTime)
         {
             jumptime += gameTime.ElapsedGameTime.TotalSeconds;
@@ -366,33 +376,25 @@ namespace Platformer
             if (input.KeyboardHandler.IsKeyDown(Keys.Left))
             {
                 player_fixture.Body.ApplyLinearImpulse(new Vector2(-100, 0));
-               // circles[0].Body.ApplyLinearImpulse(new Vector2(-200, 0));
-               // axis.MotorSpeed = -MathHelper.TwoPi * 300;
+               
             }
             else if (input.KeyboardHandler.IsKeyDown(Keys.Right))
             {
                 player_fixture.Body.ApplyLinearImpulse(new Vector2(100, 0));
-               // circles[0].Body.ApplyLinearImpulse(new Vector2(200, 0));
-               // axis.MotorSpeed = -MathHelper.TwoPi * 3;
-
+               
             }
-            else
-               // axis.MotorSpeed = -MathHelper.TwoPi * 0;
+            
+            //charcter jump.
             if (input.KeyboardHandler.WasKeyPressed(Keys.LeftControl)&&(player_fixture.Body.LinearVelocity.Y<=0.1f&& player_fixture.Body.LinearVelocity.Y >= -0.1f))
             {
                 if (jumptime >= 0.1f)
                 {
                     player_fixture.Body.ApplyLinearImpulse(new Vector2(0, 2500f));
-                    // circles[0].Body.ApplyLinearImpulse(new Vector2(0,2000f));
                     jumptime = 0;
                 }
             }
-            if (!paused && input.KeyboardHandler.WasKeyPressed(Keys.Space))
-            {
-                Vector2 impulse = new Vector2(0, -100f);
-                circles[0].Body.ApplyLinearImpulse(ref impulse);
-            }
-
+           
+            //debugView flag handeling
             if (paused && input.KeyboardHandler.IsHoldingKey(Keys.Left))
                 world.Step(Math.Min((float)gameTime.ElapsedGameTime.TotalMilliseconds * dt, (1f / 30f)));
 
@@ -439,10 +441,15 @@ namespace Platformer
             
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
-            
-
             spriteBatch.Begin();
+
+            //drawing background
             spriteBatch.Draw(bg_texture, new Rectangle(0, 0, graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight), Color.White);
+
+            if (level_is_finished)
+                spriteBatch.DrawString(font, "Finished level!", new Vector2(graphics.PreferredBackBufferWidth / 2f, graphics.PreferredBackBufferHeight / 2f), Color.White);
+            
+            //drawing all DrawablePhysicsObject
             player.Draw(spriteBatch);
             Platform2.Draw(spriteBatch);
             Platform3.Draw(spriteBatch);
@@ -454,17 +461,11 @@ namespace Platformer
             Draw_block3.Draw(spriteBatch);
             Draw_block4.Draw(spriteBatch);
             Draw_block5.Draw(spriteBatch);
-
-
             spriteBatch.End();
 
-          
-
-
+            //rendering all world data.
             debugView.RenderDebugData(ref Camera2D.Projection, ref Camera2D.View);
-            //debugView.RenderDebugData(Matrix.Identity, Matrix.Identity);
-
-
+ 
             base.Draw(gameTime);
         }
     }

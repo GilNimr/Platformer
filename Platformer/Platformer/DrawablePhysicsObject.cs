@@ -1,16 +1,8 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
-
 using FarseerPhysics.Dynamics;
-using FarseerPhysics.Factories;
-using FarseerPhysics.DebugView;
-using System.Collections.Generic;
-using System;
-using XELibrary;
 using FarseerPhysics;
-using FarseerPhysics.Common;
-using FarseerPhysics.Dynamics.Joints;
+
 
 namespace Platformer
 {
@@ -42,8 +34,11 @@ namespace Platformer
             this.texture = texture;
         }
 
-       
 
+        /// <summary>
+        ///in this draw method we use the rectangle destination that uses the camera2D 
+        ///to draw the objects in the right place on screen in regards to the camera.
+        /// </summary>
         public void Draw(SpriteBatch spriteBatch)
         {
             Rectangle destination = new Rectangle
