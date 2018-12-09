@@ -9,7 +9,7 @@ using System;
 using XELibrary;
 using FarseerPhysics;
 using FarseerPhysics.Common;
-
+using FarseerPhysics.Dynamics.Contacts;
 
 namespace Platformer
 {
@@ -143,8 +143,10 @@ namespace Platformer
             player_fixture = FixtureFactory.AttachRectangle(4.0f , 4.0f, 10.0f, new Vector2(), new Body(world));
             player_fixture.Body.BodyType = BodyType.Dynamic;
             player_fixture.CollisionCategories = Category.Cat2;
-            player_fixture.Body.Position = new Vector2(07, 3.0f);
-
+            player_fixture.Body.Position = new Vector2(-50f, 50.0f);
+            player_fixture.CollidesWith = Category.All;
+            player_fixture.OnCollision = collision_with_finish_point;
+            
             player = new DrawablePhysicsObject(player_fixture.Body, texture_player, new Vector2(40.0f, 40.0f));
             
             //creating platform 2
@@ -331,8 +333,18 @@ namespace Platformer
 
             debugView.RemoveFlags(DebugViewFlags.Joint);
         }
-        
-    
+
+        private bool collision_with_finish_point(Fixture fixtureA, Fixture fixtureB, Contact contact)
+        {
+            if (fixtureB == finish_button)
+            {
+                level_is_finished = true;
+                
+            }
+            return true;
+        }
+
+
 
         /// <summary>
         /// UnloadContent will be called once per game and is the place to unload
